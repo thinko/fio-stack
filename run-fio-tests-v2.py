@@ -31,8 +31,8 @@ test_settings["mode"] = ["read", "write", "randrw"]
 test_settings["block_size"] = ["4k", "16k", "128k", "4M"]
 test_settings["iodepth"] = [1, 8, 16]
 test_settings["numjobs"] = [1, 3, 8]
-test_settings["rwmixread"] = 50
-#test_settings["rwmixread"] = [50, 30, 70]  #TODO: add multiple mixed ratio handling
+#test_settings["rwmixread"] = [50]
+test_settings["rwmixread"] = [50, 30, 70]  #TODO: add multiple mixed ratio handling
 #test_settings["runtime"] = 60          # default is 60
 #test_settings["size"] = None           # default is None
 #test_settings["dry_run"] = False       # default is False
@@ -47,7 +47,7 @@ iodepths = test_settings["iodepth"]
 numjobs = test_settings["numjobs"]
 block_size = test_settings["block_size"]
 device_prefix = "/dev/"
-one_nvme_dev = "/dev/nvme0n1"  # Single device
+one_nvme_dev = ["/dev/nvme0n1"]  # Single device
 all_nvme_dev = "/dev/nvme0n1:/dev/nvme1n1:/dev/nvme2n1:/dev/nvme3n1:/dev/nvme4n1:/dev/nvme5n1:/dev/nvme6n1:/dev/nvme7n1:/dev/nvme8n1:/dev/nvme9n1"  # 10 devices
 all_devs = ["nvme0n1", "nvme1n1", "nvme2n1", "nvme3n1", "nvme4n1", "nvme5n1", "nvme6n1", "nvme7n1", "nvme8n1", "nvme9n1"]  # 10 devices
 
@@ -81,8 +81,9 @@ def blkdev_exists(path):
 
 def setup_output_dir(enc = False, enc_param = ''):
     # output_base = "$HOME/benchmark/fio" -- bench_fio creates subdirs: devicename/mode(rxmix)/block_size
-    output_luks = output_base if not enc else output_base + f'_luks'
+    output_luks = path.abspath(output_base if not enc else output_base + f'_luks')
     output_dir = output_luks if enc_param == '' else output_base + f'_' + enc_param
+    supporting.make_directory(output_dir)
     return output_dir
 
 def setup_luks_dev(device, luks_param):
@@ -196,7 +197,7 @@ def main():
     # from bench_fio:
     checks.check_encoding()
     checks.check_if_fio_exists()
-    test_settings["target"] = all_nvme_dev
+    test_settings["target"] = one_nvme_dev
     test_settings["output"] = setup_output_dir()
     checks.check_settings(test_settings)
     tests = supporting.generate_test_list(test_settings)
