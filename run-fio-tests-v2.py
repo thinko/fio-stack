@@ -1,6 +1,7 @@
 import os, sys, stat
 from os import path
 import subprocess
+from datetime import datetime
 
 sys.path.insert(0, path.abspath('../fio-plot'))
 
@@ -27,17 +28,18 @@ test_settings["type"] = 'device'        # device for block device(s), file for b
 test_settings["destructive"] = True
 test_settings["parallel"] = True
 test_settings["time_based"] = True
+test_settings["runtime"] = 20
 test_settings["mode"] = ["read", "write", "randrw"]
-test_settings["block_size"] = ["4k", "16k", "128k", "4M"]
+test_settings["block_size"] = ["4k", "16k", "4M"]
 test_settings["iodepth"] = [1, 8, 16]
 test_settings["numjobs"] = [1, 3, 8]
-#test_settings["rwmixread"] = [50]
-test_settings["rwmixread"] = [50, 30, 70]  #TODO: add multiple mixed ratio handling
+test_settings["rwmixread"] = [50]
+#test_settings["rwmixread"] = [50, 30, 70]  #TODO: add multiple mixed ratio handling
 #test_settings["runtime"] = 60          # default is 60
 #test_settings["size"] = None           # default is None
 #test_settings["dry_run"] = False       # default is False
 
-output_base = "$HOME/benchmark/fio"
+output_base = os.path.join("/root/benchmark/fio", datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 crypt_header_prefix = "/var/tmp/luksheader."
 crypt_pass = "correcthorsebatterystaple"
 
