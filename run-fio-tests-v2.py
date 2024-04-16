@@ -174,11 +174,11 @@ def close_luks_dev(device):
 #                     )
 
 def main():
-    args = sys.argv[1:]
+#    args = sys.argv[1:]
 
-    if not args:
-        print('usage: [--flags options] [inputs] ')
-        sys.exit(1)
+#    if not args:
+#        print('usage: [--flags options] [inputs] ')
+#        sys.exit(1)
         # Encryption setup (if applicable)
 
     # from bench_fio:
