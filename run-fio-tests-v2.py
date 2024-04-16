@@ -1,8 +1,8 @@
-import os, sys
+import os, sys, stat
 from os import path
 import subprocess
 
-sys.path.append(path.abspath('../fio-plot'))
+sys.path.insert(0, path.abspath('../fio-plot'))
 
 import fio_plot
 from bench_fio.benchlib import (
@@ -18,7 +18,7 @@ from bench_fio.benchlib import (
 
 # Define test parameters
 run_interactive = False
-do_luks_tests = True
+do_luks_tests = False
 test_crypt = ["none", "default", "no-queues", "same-cpu-crypt"]
 
 test_settings = defaults.get_default_settings()
@@ -72,6 +72,18 @@ def yes_or_no(question, default_no=True):
         return False
     else:
         return False if default_no else True
+
+def blkdev_exists(path):
+    try:
+        return stat.S_ISBLK(os.stat(path).st_mode)
+    except:
+        return False
+
+def setup_output_dir(enc = False, enc_param = ''):
+    # output_base = "$HOME/benchmark/fio" -- bench_fio creates subdirs: devicename/mode(rxmix)/block_size
+    output_luks = output_base if not enc else output_base + f'_luks'
+    output_dir = output_luks if enc_param == '' else output_base + f'_' + enc_param
+    return output_dir
 
 def setup_luks_dev(device, luks_param):
     crypt_header = crypt_header_prefix + device + ".img"
@@ -184,10 +196,16 @@ def main():
     # from bench_fio:
     checks.check_encoding()
     checks.check_if_fio_exists()
+    test_settings["target"] = all_nvme_dev
+    test_settings["output"] = setup_output_dir()
+    checks.check_settings(test_settings)
     tests = supporting.generate_test_list(test_settings)
+    print("[debug] Tests: " + ', '.join(tests))
+    
     if do_luks_tests:
         for cryptopt in test_crypt:        #["none", "default", "no-queues", "same-cpu-crypt"]
             test_settings["crypto"] = cryptopt
+            test_settings["output"] = setup_output_dir(enc = True, enc_param=cryptopt)
             display.display_header(test_settings, tests)
             if cryptopt != "none":
                 setup_luks_dev(test_settings, luks_params[cryptopt])
