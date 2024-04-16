@@ -201,7 +201,7 @@ def main():
     test_settings["output"] = setup_output_dir()
     checks.check_settings(test_settings)
     tests = supporting.generate_test_list(test_settings)
-    print("[debug] Tests: " + ', '.join(tests))
+    print("[debug] Tests: ", tests)
     
     if do_luks_tests:
         for cryptopt in test_crypt:        #["none", "default", "no-queues", "same-cpu-crypt"]
