@@ -29,7 +29,7 @@ test_settings["destructive"] = True
 test_settings["parallel"] = True
 test_settings["time_based"] = True
 test_settings["runtime"] = 20
-test_settings["mode"] = ["read", "write", "randrw"]
+test_settings["mode"] = ["randread", "randwrite", "randrw"]
 test_settings["block_size"] = ["4k", "16k", "4M"]
 test_settings["iodepth"] = [1, 8, 16]
 test_settings["numjobs"] = [1, 3, 8]
@@ -89,6 +89,7 @@ def setup_output_dir(enc = False, enc_param = ''):
     return output_dir
 
 def setup_luks_dev(device, luks_param):
+    breakpoint()
     crypt_header = crypt_header_prefix + device + ".img"
 
     is_luks = subprocess.run(['cryptsetup', 'isLuks', device_prefix + device])
@@ -104,6 +105,10 @@ def setup_luks_dev(device, luks_param):
         cmd_luks_fmt = subprocess.run(['cryptsetup', '-q', 'luksFormat', device_prefix + device, '--batch-mode', '--header', crypt_header],
                                       input=crypt_pass, capture_output=True, text=True)
         print(cmd_luks_fmt.stdout)
+        cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', luks_param, '--header', crypt_header, device_prefix + device, 'encrypted-{device}'],
+                                        input=crypt_pass, capture_output=True, text=True)
+        print(cmd_luks_open.stdout)
+        return True if cmd_luks_open.returncode == 0 else False
     elif (os.path.exists(crypt_header)) and (is_luks.returncode == 0):
         print(f'Device {device} is a luks device, Header {crypt_header} exists.')
         is_open = subprocess.run(['dmsetup', 'info', 'encrypted-{device}'])
@@ -111,12 +116,15 @@ def setup_luks_dev(device, luks_param):
             cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', luks_param, '--header', crypt_header, f'{device_prefix}{device}', 'encrypted-{device}'],
                                            input=crypt_pass, capture_output=True, text=True)
             print(cmd_luks_open.stdout)
+            return True if cmd_luks_open.returncode == 0 else False
         else:
             print(f'Device: {device} is already open: /dev/mapper/encrypted-{device}')
             print(is_open.stdout)
     else:
         print(f'Something failed looking at the header (should be: {crypt_header} ) and device state for {device}')
         input("Press Enter to continue... ")
+
+    return False
 
 def close_luks_dev(device):
     #		cryptsetup close encrypted-${dev}
@@ -211,7 +219,7 @@ def main():
             test_settings["output"] = setup_output_dir(enc = True, enc_param=cryptopt)
             display.display_header(test_settings, tests)
             if cryptopt != "none":
-                setup_luks_dev(test_settings, luks_params[cryptopt])
+                setup_luks_dev(os.path.basename(test_settings["target"]), luks_params[cryptopt])
                 runfio.run_benchmarks(test_settings, tests)
                 close_luks_dev(test_settings["device"])
             else:
