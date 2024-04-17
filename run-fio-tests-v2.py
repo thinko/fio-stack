@@ -219,9 +219,11 @@ def main():
             test_settings["output"] = setup_output_dir(enc = True, enc_param=cryptopt)
             display.display_header(test_settings, tests)
             if cryptopt != "none":
-                setup_luks_dev(os.path.basename(test_settings["target"]), luks_params[cryptopt])
+                for device in test_settings["target"]:
+                    setup_luks_dev(os.path.basename(device), luks_params[cryptopt])
                 runfio.run_benchmarks(test_settings, tests)
-                close_luks_dev(test_settings["device"])
+                for device in test_settings["target"]:
+                    close_luks_dev(os.path.basename(device))
             else:
                 runfio.run_benchmarks(test_settings, tests)
     else:
