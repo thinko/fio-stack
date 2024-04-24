@@ -18,8 +18,8 @@ from bench_fio.benchlib import (
 )
 
 # Define test parameters
-run_interactive = False
-do_luks_tests = False
+run_interactive = True
+do_luks_tests = True
 test_crypt = ["none", "default", "no-queues", "same-cpu-crypt"]
 
 test_settings = defaults.get_default_settings()
@@ -89,7 +89,7 @@ def setup_output_dir(enc = False, enc_param = ''):
     return output_dir
 
 def setup_luks_dev(device, luks_param):
-    breakpoint()
+    #breakpoint()
     crypt_header = crypt_header_prefix + device + ".img"
 
     is_luks = subprocess.run(['cryptsetup', 'isLuks', device_prefix + device])
@@ -105,18 +105,18 @@ def setup_luks_dev(device, luks_param):
         cmd_luks_fmt = subprocess.run(['cryptsetup', '-q', 'luksFormat', device_prefix + device, '--batch-mode', '--header', crypt_header],
                                       input=crypt_pass, capture_output=True, text=True)
         print(cmd_luks_fmt.stdout)
-        cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', luks_param, '--header', crypt_header, device_prefix + device, 'encrypted-{device}'],
+        cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', device_prefix + device, luks_param, '--header', crypt_header, f'encrypted-{device}'],
                                         input=crypt_pass, capture_output=True, text=True)
         print(cmd_luks_open.stdout)
-        return True if cmd_luks_open.returncode == 0 else False
+        return f'encrypted-{device}' if cmd_luks_open.returncode == 0 else False
     elif (os.path.exists(crypt_header)) and (is_luks.returncode == 0):
         print(f'Device {device} is a luks device, Header {crypt_header} exists.')
         is_open = subprocess.run(['dmsetup', 'info', 'encrypted-{device}'])
         if not is_open.returncode == 0:
-            cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', luks_param, '--header', crypt_header, f'{device_prefix}{device}', 'encrypted-{device}'],
+            cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', device_prefix + device, luks_param, '--header', crypt_header, f'encrypted-{device}'],
                                            input=crypt_pass, capture_output=True, text=True)
             print(cmd_luks_open.stdout)
-            return True if cmd_luks_open.returncode == 0 else False
+            return f'encrypted-{device}' if cmd_luks_open.returncode == 0 else False
         else:
             print(f'Device: {device} is already open: /dev/mapper/encrypted-{device}')
             print(is_open.stdout)
@@ -130,7 +130,14 @@ def close_luks_dev(device):
     #		cryptsetup close encrypted-${dev}
 	#   	rm /var/tmp/crypthdr.img
     #TODO: Check if device is open before running close and removing header
-
+    if not device.startswith("encrypted-"):
+        device = f'encrypted-{device}'
+    is_open = subprocess.run(['dmsetup', 'info', 'encrypted-{device}'])
+    if is_open.returncode != 0:
+        print(f'Device {device} does not appear to be a LUKS device.')
+        print(is_open.stdout, is_open.stderr)
+        return False
+        
     crypt_header = crypt_header_prefix + device + ".img"
     cmd_luks_close = subprocess.run(['cryptsetup', 'close', 'encrypted-{device}'], capture_output=True, text=True)
     if not cmd_luks_close.returncode == 0:
@@ -142,6 +149,8 @@ def close_luks_dev(device):
     if yes_or_no(f'Remove luks header: {crypt_header}?', False):
         cmd_rm_header = subprocess.run(['rm', '-vf', '{crypt_header}'], capture_output=True, text=True)
         print(cmd_rm_header.stdout)
+    
+    return True
 
 # def run_fio_tests(device, enc = False, enc_param = '', jobsmultiplier = 1):
 #     #./bench_fio --target /dev/md0 /dev/md1 --type device --mode randread randwrite --output RAID_ARRAY --destructive
@@ -210,8 +219,9 @@ def main():
     test_settings["target"] = one_nvme_dev
     test_settings["output"] = setup_output_dir()
     checks.check_settings(test_settings)
+    print("[debug] Test Settings: ", test_settings)
     tests = supporting.generate_test_list(test_settings)
-    print("[debug] Tests: ", tests)
+    #print("[debug] Tests: ", tests)
     
     if do_luks_tests:
         for cryptopt in test_crypt:        #["none", "default", "no-queues", "same-cpu-crypt"]
@@ -219,8 +229,10 @@ def main():
             test_settings["output"] = setup_output_dir(enc = True, enc_param=cryptopt)
             display.display_header(test_settings, tests)
             if cryptopt != "none":
+                enc_devs = []
                 for device in test_settings["target"]:
-                    setup_luks_dev(os.path.basename(device), luks_params[cryptopt])
+                    newdev = setup_luks_dev(os.path.basename(device), luks_params[cryptopt])
+                    enc_devs.append(newdev if not False else device)
                 runfio.run_benchmarks(test_settings, tests)
                 for device in test_settings["target"]:
                     close_luks_dev(os.path.basename(device))
