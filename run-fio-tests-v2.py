@@ -109,16 +109,17 @@ def setup_luks_dev(device, luks_param):
                                       input=crypt_pass, capture_output=True, text=True)
         print(cmd_luks_fmt.stdout)
         print(cmd_luks_fmt.stderr)
-        cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', device_prefix + device, luks_param, '--header', crypt_header, f'encrypted-{device}'],
+        cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', device_prefix + device, luks_param, '--header', crypt_header, f'encrypted-{device}', f'--debug', f'--verbose', f'-d -'],
                                         input=crypt_pass, capture_output=True, text=True)
         print(cmd_luks_open.stdout)
         print(cmd_luks_open.stderr)
+        print(f'encrypted-{device} luks_open returncode: {cmd_luks_open.returncode}')
         return f'encrypted-{device}' if cmd_luks_open.returncode == 0 else False
     elif (os.path.exists(crypt_header)) and (is_luks.returncode == 0):
         print(f'Device {device} is a luks device, Header {crypt_header} exists.')
         is_open = subprocess.run(['dmsetup', 'info', 'encrypted-{device}'])
         if not is_open.returncode == 0:
-            cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', device_prefix + device, luks_param, '--header', crypt_header, f'encrypted-{device}'],
+            cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', device_prefix + device, luks_param, '--header', crypt_header, f'encrypted-{device}', f'--debug', f'--verbose', f'-d -'],
                                            input=crypt_pass, capture_output=True, text=True)
             print(cmd_luks_open.stdout)
             return f'encrypted-{device}' if cmd_luks_open.returncode == 0 else False
