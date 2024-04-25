@@ -20,7 +20,8 @@ from bench_fio.benchlib import (
 # Define test parameters
 run_interactive = True
 do_luks_tests = True
-test_crypt = ["none", "default", "no-queues", "same-cpu-crypt"]
+test_crypt = ["default", "no-queues", "same-cpu-crypt"]
+#test_crypt = ["none", "default", "no-queues", "same-cpu-crypt"]
 
 test_settings = defaults.get_default_settings()
 
