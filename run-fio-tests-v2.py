@@ -86,6 +86,7 @@ def setup_output_dir(enc = False, enc_param = ''):
     output_luks = path.abspath(output_base if not enc else output_base + f'_luks')
     output_dir = output_luks if enc_param == '' else output_base + f'_' + enc_param
     supporting.make_directory(output_dir)
+    print(f'created directory: {output_dir}')
     return output_dir
 
 def setup_luks_dev(device, luks_param):
@@ -225,10 +226,11 @@ def main():
     
     if do_luks_tests:
         for cryptopt in test_crypt:        #["none", "default", "no-queues", "same-cpu-crypt"]
+            print(f'[debug] crypto option: "{cryptopt}"')
             test_settings["crypto"] = cryptopt
             test_settings["output"] = setup_output_dir(enc = True, enc_param=cryptopt)
             display.display_header(test_settings, tests)
-            if cryptopt != "none":
+            if cryptopt != f'none':
                 enc_devs = []
                 for device in test_settings["target"]:
                     newdev = setup_luks_dev(os.path.basename(device), luks_params[cryptopt])
