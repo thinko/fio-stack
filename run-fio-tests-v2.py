@@ -97,7 +97,7 @@ def setup_luks_dev(device, luks_param):
     is_luks = subprocess.run(['cryptsetup', 'isLuks', device_prefix + device])
 
     #if not is_luks.returncode == 0:  # if it's not already a luks device
-    print(f'Device {device} isLuks: {is_luks.s}')
+    print(f'Device {device} isLuks returncode: {is_luks.returncode}')
     print(f'{crypt_header} exists: {os.path.exists(crypt_header)}')
 
     if (not os.path.exists(crypt_header)) or (not is_luks.returncode == 0):
