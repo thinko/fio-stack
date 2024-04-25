@@ -96,7 +96,8 @@ def setup_luks_dev(device, luks_param):
     is_luks = subprocess.run(['cryptsetup', 'isLuks', device_prefix + device])
 
     #if not is_luks.returncode == 0:  # if it's not already a luks device
-    #    print(f'Device {device} is not a valid luks device, quitting.')
+    print(f'Device {device} isLuks: {is_luks.s}')
+    print(f'{crypt_header} exists: {os.path.exists(crypt_header)}')
 
     if (not os.path.exists(crypt_header)) or (not is_luks.returncode == 0):
         #no header file, no device crypt-header
@@ -106,9 +107,11 @@ def setup_luks_dev(device, luks_param):
         cmd_luks_fmt = subprocess.run(['cryptsetup', '-q', 'luksFormat', device_prefix + device, '--batch-mode', '--header', crypt_header],
                                       input=crypt_pass, capture_output=True, text=True)
         print(cmd_luks_fmt.stdout)
+        print(cmd_luks_fmt.stderr)
         cmd_luks_open = subprocess.run(['cryptsetup', '-q', 'open', device_prefix + device, luks_param, '--header', crypt_header, f'encrypted-{device}'],
                                         input=crypt_pass, capture_output=True, text=True)
         print(cmd_luks_open.stdout)
+        print(cmd_luks_open.stderr)
         return f'encrypted-{device}' if cmd_luks_open.returncode == 0 else False
     elif (os.path.exists(crypt_header)) and (is_luks.returncode == 0):
         print(f'Device {device} is a luks device, Header {crypt_header} exists.')
@@ -227,7 +230,7 @@ def main():
     if do_luks_tests:
         for cryptopt in test_crypt:        #["none", "default", "no-queues", "same-cpu-crypt"]
             print(f'[debug] crypto option: "{cryptopt}"')
-            test_settings["crypto"] = cryptopt
+            #test_settings["crypto"] = cryptopt
             test_settings["output"] = setup_output_dir(enc = True, enc_param=cryptopt)
             display.display_header(test_settings, tests)
             if cryptopt != f'none':
