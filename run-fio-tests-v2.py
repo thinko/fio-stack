@@ -171,7 +171,7 @@ def close_luks_dev(device):
 #     output_dir = (output_luks + f'_def') if enc_param == '' else output_base + f'_luks'
 #     if enc: dirname += f'_luks_{enc_param}'
 
-#     #arg_output = f'--output {output_base}/' + f'{}'
+#     #arg_output = f'--output {output_base}/' + f'{}
     
 #     # Run tests with different parameters
 #     for testmode in test_modes:
